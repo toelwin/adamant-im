@@ -117,7 +117,7 @@
               {{$t('votes.upvotes')}}: <strong>{{ upvotedCount }}</strong>,&nbsp;
               {{$t('votes.downvotes')}}: <strong>{{ downvotedCount }}</strong>,&nbsp;
               {{$t('votes.total_new_votes')}}: <strong>{{ downvotedCount + upvotedCount }}</strong> / {{ voteRequestLimit }},&nbsp;
-              {{$t('votes.total_votes')}}: <strong>{{ originVotesCount }} / {{ delegates.length }}</strong>
+              {{$t('votes.total_votes')}}: <strong>{{ originVotesCount }} / {{ delegatesCount }}</strong>
             </div>
           </md-card-header>
           <md-card-expand>
@@ -293,19 +293,19 @@ export default {
         })
     },
     delegatesCount () {
-      return this.delegates.length
+      return Object.values(this.$store.state.delegates.delegates).length
     },
     upvotedCount () {
-      return this.delegates.filter(x => x.upvoted).length
+      return Object.values(this.$store.state.delegates.delegates).filter(x => x.upvoted).length
     },
     downvotedCount () {
-      return this.delegates.filter(x => x.downvoted).length
+      return Object.values(this.$store.state.delegates.delegates).filter(x => x.downvoted).length
     },
     originVotesCount () {
       return Object.values(this.$store.state.delegates.delegates).filter(x => x._voted).length
     },
     totalVotes () {
-      return this.downvotedCount + this.originVotesCount - this.downvotedCount
+      return this.upvotedCount + this.originVotesCount - this.downvotedCount
     },
     delegatesLoaded () {
       if (this.$store.state.delegates.delegates) {
