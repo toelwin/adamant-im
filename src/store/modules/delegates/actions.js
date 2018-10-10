@@ -6,12 +6,7 @@ function _getDelegates (context, limit = constants.Delegates.ACTIVE_DELEGATES, o
     if (response.success) {
       for (let i in response.delegates) {
         const delegate = response.delegates[i]
-        const voted = votes.includes(delegate.address)
-        delegate._voted = voted
-        delegate.voted = voted
-        delegate.upvoted = false
-        delegate.downvoted = false
-        delegate.showDetails = false
+        delegate.voted = votes.includes(delegate.address)
         delegate.forged = 0
         delegate.status = 5
         context.commit('delegate_info', delegate)

@@ -12,12 +12,12 @@
                 <md-button class="md-icon-button">
                   <md-icon>search</md-icon>
                 </md-button>
-                <md-input style="width:100%" v-model="filterString" v-bind:placeholder="$t('votes.filter_placeholder')"></md-input>
+                <md-input style="width:100%" v-model="filterString" :placeholder="$t('votes.filter_placeholder')"></md-input>
               </md-input-container>
             </md-layout>
           </md-layout>
         </md-toolbar>
-          <md-table md-sort="rank" md-sort-type="desc" @sort="onSort" v-bind:style="tableStyle">
+          <md-table md-sort="rank" md-sort-type="desc" @sort="onSort" :style="tableStyle">
             <md-table-header>
               <md-table-row>
                 <md-table-head>{{$t('votes.table_head_vote')}}</md-table-head>
@@ -27,86 +27,16 @@
               </md-table-row>
             </md-table-header>
             <md-table-body>
-              <template v-for="(delegate, index) in delegates">
-                <md-table-row style="cursor:pointer"
-                              class="delegate-row"
-                              :key="delegate.address+index"
-                              v-bind:class="{upvoted: delegate.upvoted, downvoted: delegate.downvoted, active: delegate.showDetails}"
-                              v-on:click.native="toggleDetails(delegate)">
-                  <md-table-cell>
-                    <md-checkbox v-model="delegate.voted" title="vote" v-on:change="vote(delegate)"></md-checkbox>
-                  </md-table-cell>
-                  <md-table-cell style="text-align: left">{{ delegate.rank }}</md-table-cell>
-                  <md-table-cell style="text-align: left"><span>{{ delegate.username }}</span></md-table-cell>
-                  <md-table-cell>
-                    <md-icon>{{ delegate.showDetails ? 'keyboard_arrow_down' : 'chevron_right' }}</md-icon>
-                  </md-table-cell>
-                </md-table-row>
-                <md-table-row v-show="delegate.showDetails"
-                              style="border-top-width: 0; padding-bottom: 10px"
-                              class="delegate-row"
-                              :key="index+delegate.address"
-                              v-bind:class="{upvoted: delegate.upvoted, downvoted: delegate.downvoted, active: delegate.showDetails}">
-                  <md-table-cell collspan="4" class="delegate-details">
-                    <md-layout md-column>
-
-                      <md-layout md-gutter md-column-xsmall>
-                        <md-layout class="delegate-info-box">
-                          <span class="status-indicator"
-                                v-bind:style="delegate.style"
-                                v-bind:title="delegate.tooltip"></span>
-                          <a target="_blank"
-                             v-bind:href="'https://explorer.adamant.im/delegate/'+delegate.address">
-                            {{ delegate.address }}
-                          </a>
-                        </md-layout>
-                        <md-layout md-hide-xsmall></md-layout>
-                      </md-layout>
-
-                      <md-layout md-gutter md-column-xsmall>
-
-                        <md-layout class="delegate-info-box">
-                          {{ $t('votes.delegate_uptime') }}:&nbsp;
-                          <strong>{{ delegate.productivity }}%</strong>
-                        </md-layout>
-
-                        <md-layout class="delegate-info-box">
-                          {{ $t('votes.delegate_approval') }}:&nbsp;
-                          <strong>{{ delegate.approval }}%</strong>
-                        </md-layout>
-
-                      </md-layout>
-
-                      <md-layout md-gutter md-column-xsmall>
-
-                        <md-layout class="delegate-info-box">
-                          {{ $t('votes.delegate_forging_time') }}:&nbsp;
-                          <strong>{{ formatForgingTime(delegate.forgingTime) }}</strong>
-                        </md-layout>
-
-                        <md-layout class="delegate-info-box">
-                          {{ $t('votes.delegate_forged') }}:&nbsp;
-                          <strong>{{ (delegate.forged  / 100000000).toFixed(4) }}ADM</strong>
-                        </md-layout>
-
-                      </md-layout>
-
-                      <md-layout md-gutter md-column-xsmall>
-                        <md-layout class="delegate-info-box">
-                          {{ $t('votes.delegate_link') }}:&nbsp;
-                          <strong>{{ delegate.link }}</strong>
-                        </md-layout>
-
-                        <md-layout class="delegate-info-box">
-                          {{ $t('votes.delegate_description') }}:&nbsp;
-                          <strong>{{ delegate.description }}</strong>
-                        </md-layout>
-                      </md-layout>
-
-                    </md-layout>
-                  </md-table-cell>
-                </md-table-row>
-              </template>
+              <VoteEntry v-for="(delegate, index) in delegates"
+                         v-show="filteredDelegates[delegate.address] || typeof filteredDelegates[delegate.address] === 'undefined'"
+                         :key="index + delegate.address"
+                         :index="index"
+                         :delegate="delegate"
+                         :up-voted="typeof upvotedDelegates[delegate.address] !== 'undefined'"
+                         :down-voted="typeof downvotedDelegates[delegate.address] !== 'undefined'"
+                         :available="upVotesCount + downVotesCount < 30"
+                         @change="(downvoted, upvoted) => { vote(delegate, downvoted, upvoted) }">
+              </VoteEntry>
             </md-table-body>
           </md-table>
       </md-table-card>
@@ -114,16 +44,15 @@
           <md-card-header>
             <div class="md-title">{{ $t('votes.summary_title') }}</div>
             <div class="md-subhead">
-              {{$t('votes.upvotes')}}: <strong>{{ upvotedCount }}</strong>,&nbsp;
-              {{$t('votes.downvotes')}}: <strong>{{ downvotedCount }}</strong>,&nbsp;
-              {{$t('votes.total_new_votes')}}: <strong>{{ downvotedCount + upvotedCount }}</strong> / {{ voteRequestLimit }},&nbsp;
+              {{$t('votes.upvotes')}}: <strong>{{ upVotesCount }}</strong>,&nbsp;
+              {{$t('votes.downvotes')}}: <strong>{{ downVotesCount }}</strong>,&nbsp;
+              {{$t('votes.total_new_votes')}}: <strong>{{ downVotesCount + upVotesCount }}</strong> / {{ voteRequestLimit }},&nbsp;
               {{$t('votes.total_votes')}}: <strong>{{ originVotesCount }} / {{ delegatesCount }}</strong>
             </div>
           </md-card-header>
           <md-card-expand>
             <md-card-actions>
-              <md-button v-bind:disabled="upvotedCount + downvotedCount === 0"
-                         v-on:click="sendVotes">{{$t('votes.vote_button_text')}}</md-button>
+              <md-button :disabled="upVotesCount + downVotesCount === 0" @click="sendVotes">{{$t('votes.vote_button_text')}}</md-button>
               <span style="flex: 1"></span>
               <md-button class="md-icon-button" md-expand-trigger>
                 <md-icon>keyboard_arrow_down</md-icon>
@@ -142,8 +71,13 @@
 </template>
 
 <script>
+import VoteEntry from '@/components/VoteEntry'
+
 export default {
   name: 'votes',
+  components: {
+    VoteEntry
+  },
   data () {
     return {
       voteRequestLimit: 30,
@@ -151,7 +85,6 @@ export default {
         name: 'rank',
         type: 'desc'
       },
-      filterString: '',
       status: [
         { style: { 'background-color': 'green', 'border-color': 'green' }, tooltip: 'Forging' },
         { style: { 'background-color': 'orange', 'border-color': 'orange' }, tooltip: 'Missed block' },
@@ -163,7 +96,11 @@ export default {
       tableStyle: {
         height: this.formatHeight(window.innerHeight)
       },
-      votesErrorMsg: ''
+      votesErrorMsg: '',
+      filterString: '',
+      downvotedDelegates: {},
+      upvotedDelegates: {},
+      filteredDelegates: {}
     }
   },
   mounted: function () {
@@ -175,20 +112,18 @@ export default {
     this.$store.dispatch('delegates/getDelegates', { address: this.$store.state.address })
   },
   methods: {
-    vote (delegate) {
-      if (this.votedCount + this.unvotedCount > this.voteRequestLimit) {
+    vote (delegate, downvoted, upvoted) {
+      if (this.downVotesCount + this.upVotesCount >= this.voteRequestLimit) {
         return false
       }
-      if (delegate.voted) {
-        if (this.$store.state.delegates.delegates[delegate.address]._voted) {
-          delegate.downvoted = true
-        }
-        delegate.upvoted = false
+
+      if (downvoted && !upvoted) {
+        this.$set(this.downvotedDelegates, delegate.address, delegate)
+      } else if (!downvoted && upvoted) {
+        this.$set(this.upvotedDelegates, delegate.address, delegate)
       } else {
-        if (!this.$store.state.delegates.delegates[delegate.address]._voted) {
-          delegate.upvoted = true
-        }
-        delegate.downvoted = false
+        this.$delete(this.downvotedDelegates, delegate.address)
+        this.$delete(this.upvotedDelegates, delegate.address)
       }
     },
     onSort (params) {
@@ -197,35 +132,9 @@ export default {
     sendVotes () {
       if (this.$store.state.balance < 50) {
         this.votesErrorMsg = this.$t('votes.no_money')
-        this.$refs.votesSnackbar.open()
       } else {
-        let votes = Array.concat(this.delegates.filter(x => x.downvoted).map(x => `-${x.publicKey}`),
-          this.delegates.filter(x => x.upvoted).map(x => `+${x.publicKey}`))
+        let votes = Object.values(this.downvotedDelegates).map(x => `-${x.publicKey}`).concat(Object.values(this.upvotedDelegates).map(x => `+${x.publicKey}`))
         this.$store.dispatch('delegates/voteForDelegates', { votes: votes, address: this.$store.state.address })
-      }
-    },
-    toggleDetails (delegate) {
-      if (!delegate.showDetails) {
-        this.$store.dispatch('delegates/getForgedByAccount', delegate)
-        this.$store.dispatch('delegates/getForgingTimeForDelegate', delegate)
-      }
-      delegate.showDetails = !delegate.showDetails
-    },
-    formatForgingTime (seconds) {
-      if (!seconds) {
-        return '...'
-      }
-      if (seconds === 0) {
-        return 'Now!'
-      }
-      const minutes = Math.floor(seconds / 60)
-      seconds = seconds - (minutes * 60)
-      if (minutes && seconds) {
-        return `${minutes} min ${seconds} sec`
-      } else if (minutes) {
-        return `${minutes} min `
-      } else {
-        return `${seconds} sec`
       }
     },
     statusStyle (delegate) {
@@ -243,6 +152,14 @@ export default {
       this.votesErrorMsg = value
       this.$refs.votesSnackbar.open()
       window.setTimeout(() => this.$store.commit('send_error', { msg: '' }), 5000) // cleanup error msg
+    },
+    votesErrorMsg (value) {
+      this.$refs.votesSnackbar.open()
+    },
+    filterString (value) {
+      for (let delegate of this.delegates) {
+        this.filteredDelegates[delegate.address] = delegate.address.includes(value) || delegate.username.includes(value)
+      }
     }
   },
   computed: {
@@ -278,34 +195,29 @@ export default {
         console.log('uncompared values!', a, b)
         return 0
       }
-      const filterDelegates = (x) => {
-        const regexp = new RegExp(this.filterString, 'i')
-        return this.filterString !== '' ? (regexp.test(x.address) || regexp.test(x.username)) : true
-      }
 
       return Object.values(this.$store.state.delegates.delegates)
-        .filter(filterDelegates)
         .sort(compare)
         .map((x) => {
-          x.style = this.status[x.status].style
-          x.tooltip = this.status[x.status].tooltip
+          x.style = this.statusStyle(x)
+          x.tooltip = this.statusTooltip(x)
           return x
         })
     },
     delegatesCount () {
-      return Object.values(this.$store.state.delegates.delegates).length
-    },
-    upvotedCount () {
-      return Object.values(this.$store.state.delegates.delegates).filter(x => x.upvoted).length
-    },
-    downvotedCount () {
-      return Object.values(this.$store.state.delegates.delegates).filter(x => x.downvoted).length
+      return Object.keys(this.$store.state.delegates.delegates).length
     },
     originVotesCount () {
-      return Object.values(this.$store.state.delegates.delegates).filter(x => x._voted).length
+      return Object.keys(this.$store.state.delegates.delegates).filter(x => x.voted).length
+    },
+    downVotesCount () {
+      return Object.keys(this.downvotedDelegates).length
+    },
+    upVotesCount () {
+      return Object.keys(this.upvotedDelegates).length
     },
     totalVotes () {
-      return this.upvotedCount + this.originVotesCount - this.downvotedCount
+      return this.upVotesCount + this.originVotesCount - this.downVotesCount
     },
     delegatesLoaded () {
       if (this.$store.state.delegates.delegates) {
@@ -318,148 +230,173 @@ export default {
   }
 }
 </script>
-<style>
-.votes {
-  position: relative;
-}
-.votes .md-checkbox .md-checkbox-container:after {
-  border: 2px solid gray;
-  border-top: 0;
-  border-left: 0;
-}
-.votes .md-table {
-  display: block;
-  overflow: hidden;
-}
-.votes .md-table table, .votes .md-table thead, .votes .md-table tbody, .votes .md-table tr {
-  width: 100%;
-  display: block;
-}
-.votes .md-table .md-table-row:hover .md-table-cell {
-  background-color: transparent !important;
-}
-.votes .md-table tr:hover {
-  background-color: #eee;
-}
-.votes .md-table td, .votes .md-table th {
-  width: 24%;
-  display: inline-block;
-  padding: 10px;
-}
-.votes .md-table tbody, .votes .md-table thead {
-  overflow: auto;
-}
 
-.votes .md-table-head {
-  padding-bottom: 0 !important;
-}
-
-.votes .md-table table {
-  height: 100%;
-}
-
-.votes .md-table tbody {
-  height: calc(100% - 66px);
-  overflow-x: hidden;
-}
-
-.votes .md-checkbox {
-  margin-top: 0;
-}
-.votes .md-toolbar.md-theme-grey {
-  border-bottom: none;
-  padding-top: 25px;
-}
-.votes .delegate-details {
-  width: 100% !important;
-  height: auto !important;
-}
-.votes .delegate-details ul {
-  list-style: none;
-}
-.md-table-row.delegate-row.active {
-  background-color: #eee;
-}
-.md-table-row.delegate-row.downvoted,.md-table-row.delegate-row.downvoted:hover {
-  background-color: antiquewhite;
-}
-.md-table-row.delegate-row.upvoted,.md-table-row.delegate-row.upvoted:hover {
-  background-color: azure;
-}
-
-.table-summary span {
-  padding: 5px;
-  margin-top: 20px;
-}
-
-.status-indicator {
-  width: 10px;
-  height: 10px;
-  border-radius: 10px;
-  border: 2px solid gray;
-  display: inline-block;
-  margin: 5px 5px 0 0;
-}
-.chat_loads {
-  position: absolute;
-  background: rgba(0,0,0,0.3);
-  height: 100%;
-  width: 100%;
-  min-height: 100vh;
-  left: 0;
-
-  padding-top: 15%;
-  z-index: 10;
-  top: -25px;
-}
-.md-spinner.md-accent .md-spinner-path
-{
-  stroke: #4A4A4A;
-}
-
-.md-table-cell.delegate-details, .md-table-cell.delegate-details .md-table-cell-container {
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  margin-left: 5px;
-}
-.md-table-cell ul {
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
-.votes .md-card {
-  margin-top: 20px;
-  padding-bottom: 10px;
-}
-
-.votes .md-card-header {
-  text-align: left;
-}
-@media (max-width: 600px) {
-  .votes .md-column-xsmall .delegate-info-box {
-    padding: 0 3px 10px 0;
+<style lang="scss">
+  .votes {
+    position: relative;
+    .md-checkbox {
+      .md-checkbox-container {
+        &:after {
+          border: 2px solid gray;
+          border-top: 0;
+          border-left: 0;
+        }
+      }
+      margin-top: 0;
+    }
+    .md-table {
+      display: block;
+      overflow: hidden;
+      table {
+        width: 100%;
+        display: block;
+        height: 100%;
+      }
+      thead {
+        width: 100%;
+        display: block;
+        overflow: auto;
+      }
+      tbody {
+        width: 100%;
+        display: block;
+        overflow: auto;
+        height: calc(100% - 66px);
+        overflow-x: hidden;
+      }
+      tr {
+        width: 100%;
+        display: block;
+        &:hover {
+          background-color: #eee;
+        }
+      }
+      .md-table-row {
+        &:hover {
+          .md-table-cell {
+            background-color: transparent !important;
+          }
+        }
+      }
+      td {
+        width: 24%;
+        display: inline-block;
+        padding: 10px;
+      }
+      th {
+        width: 24%;
+        display: inline-block;
+        padding: 10px;
+      }
+    }
+    .md-table-head {
+      padding-bottom: 0 !important;
+    }
+    .md-toolbar.md-theme-grey {
+      border-bottom: none;
+      padding-top: 25px;
+    }
+    .delegate-details {
+      width: 100% !important;
+      height: auto !important;
+      ul {
+        list-style: none;
+      }
+    }
+    .md-card {
+      margin-top: 20px;
+      padding-bottom: 10px;
+    }
+    .md-card-header {
+      text-align: left;
+    }
   }
-}
-
-.white-color-table {
-  background-color: #FFFFFF;
-}
-
-.white-color-search-bar {
-  background-color: #FFF;
-  padding: 35px 0 0 0;
-  margin-top: -25px;
-  margin-left: 0px;
-  margin-right: 0px;
-}
-
-.custom-votes-toolbar {
-  background: repeating-linear-gradient(140deg,#f6f6f6,#f6f6f6 1px,#fefefe 0,#fefefe 5px) !important;
-  margin-left: 0px !important;
-  margin-right: 0px !important;
-  padding-right: 0px !important;
-  padding-left: 0px !important;
-  position: relative !important;
-}
-
+  .md-table-row.delegate-row.active {
+    background-color: #eee;
+  }
+  .md-table-row.delegate-row.downvoted {
+    background-color: antiquewhite;
+    &:hover {
+      background-color: antiquewhite;
+    }
+  }
+  .md-table-row.delegate-row.upvoted {
+    background-color: azure;
+    &:hover {
+      background-color: azure;
+    }
+  }
+  .table-summary {
+    span {
+      padding: 5px;
+      margin-top: 20px;
+    }
+  }
+  .status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 10px;
+    border: 2px solid gray;
+    display: inline-block;
+    margin: 5px 5px 0 0;
+  }
+  .chat_loads {
+    position: absolute;
+    background: rgba(0,0,0,0.3);
+    height: 100%;
+    width: 100%;
+    min-height: 100vh;
+    left: 0;
+    padding-top: 15%;
+    z-index: 10;
+    top: -25px;
+  }
+  .md-spinner.md-accent {
+    .md-spinner-path {
+      stroke: #4A4A4A;
+    }
+  }
+  .md-table-cell.delegate-details {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-left: 5px;
+    .md-table-cell-container {
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      margin-left: 5px;
+    }
+  }
+  .md-table-cell {
+    ul {
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+  }
+  .white-color-table {
+    background-color: #FFF;
+  }
+  .white-color-search-bar {
+    background-color: #FFF;
+    padding: 35px 0 0 0;
+    margin-top: -25px;
+    margin-left: 0px;
+    margin-right: 0px;
+  }
+  .custom-votes-toolbar {
+    background: repeating-linear-gradient(140deg,#f6f6f6,#f6f6f6 1px,#fefefe 0,#fefefe 5px) !important;
+    margin-left: 0px !important;
+    margin-right: 0px !important;
+    padding-right: 0px !important;
+    padding-left: 0px !important;
+    position: relative !important;
+  }
+  @media (max-width: 600px) {
+    .votes {
+      .md-column-xsmall {
+        .delegate-info-box {
+          padding: 0 3px 10px 0;
+        }
+      }
+    }
+  }
 </style>
