@@ -2,8 +2,9 @@ import * as admApi from '../../../lib/adamant-api'
 import i18n from '../../../i18n'
 import Vue from 'vue'
 import utils from '../../../lib/adamant'
-
-export default {
+import socket from './socket-chat'
+/* eslint-disable */ 
+export default { 
 
   /** Starts background sync after login */
   afterLogin: {
@@ -36,7 +37,8 @@ export default {
    * @param {any} context Vuex action context
    */
   getNewTransactions (context) {
-    const options = { }
+    if (!this.socket) this.socket = socket(context)
+    const options = {}
     if (context.state.maxHeight > 0) {
       options.from = context.state.maxHeight + 1
     }
@@ -53,8 +55,7 @@ export default {
                 if (context.rootState.notifySound) {
                   try {
                     window.audio.playSound('newMessageNotification')
-                  } catch (e) {
-                  }
+                  } catch (e) {}
                 }
                 context.rootState.totalNewChats = context.rootState.totalNewChats + 1
               } else {
@@ -65,8 +66,7 @@ export default {
                 if (context.rootState.notifySound) {
                   try {
                     window.audio.playSound('newMessageNotification')
-                  } catch (e) {
-                  }
+                  } catch (e) {}
                 }
                 Vue.set(context.rootState.newChats, targetChat[0].partner, newMessages + 1)
                 context.rootState.totalNewChats = context.rootState.totalNewChats + 1
@@ -99,7 +99,7 @@ export default {
     // If we already have the most old transaction for this address, no need to request anything
     if (context.state.bottomReached) return Promise.resolve()
 
-    const options = { }
+    const options = {}
     if (context.state.minHeight > 1) {
       options.to = context.state.minHeight - 1
     }
