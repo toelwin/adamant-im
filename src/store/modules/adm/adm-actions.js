@@ -3,13 +3,13 @@ import i18n from '../../../i18n'
 import Vue from 'vue'
 import utils from '../../../lib/adamant'
 import socket from './socket-chat'
-/* eslint-disable */ 
-export default { 
+/* eslint-disable */
+export default {
 
   /** Starts background sync after login */
   afterLogin: {
     root: true,
-    handler (context) {
+    handler(context) {
       const address = context.rootState.address
       context.commit('address', address)
     }
@@ -18,7 +18,7 @@ export default {
   /** Resets module state */
   reset: {
     root: true,
-    handler (context) {
+    handler(context) {
       context.commit('reset')
     }
   },
@@ -26,7 +26,7 @@ export default {
   /** Handles store rehydratation */
   rehydrate: {
     root: true,
-    handler (context) {
+    handler(context) {
       const address = context.rootState.address
       context.commit('address', address)
     }
@@ -36,7 +36,7 @@ export default {
    * Retrieves new transactions: those that follow the most recently retrieved one.
    * @param {any} context Vuex action context
    */
-  getNewTransactions (context) {
+  getNewTransactions(context) {
     if (!this.socket) this.socket = socket(context)
     const options = {}
     if (context.state.maxHeight > 0) {
@@ -95,7 +95,7 @@ export default {
    * Retrieves new transactions: those that preceed the oldest among the retrieved ones.
    * @param {any} context Vuex action context
    */
-  getOldTransactions (context) {
+  getOldTransactions(context) {
     // If we already have the most old transaction for this address, no need to request anything
     if (context.state.bottomReached) return Promise.resolve()
 
@@ -124,7 +124,7 @@ export default {
    * @param {any} context Vuex action context
    * @param {string} id transaction ID
    */
-  getTransaction (context, id) {
+  getTransaction(context, id) {
     admApi.getTransaction(id).then(
       transaction => context.commit('transactions', [transaction])
     )

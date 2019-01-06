@@ -50,7 +50,7 @@ export default (context) => {
                     context.rootState.totalNewChats = context.rootState.totalNewChats + 1
                     const chats = context.rootGetters.getChats[targetChat[0].partner];
                     const txup = admApi.decodeChat(tx, tx.senderPublicKey);
-                    txup.direction="to";
+                    txup.direction = "to";
                     chats.messages[txup.id] = txup;
 
                     chats.last_message = {
@@ -60,9 +60,6 @@ export default (context) => {
                         message: txup.message,
                         timestamp: txup.timestamp
                     }
-                    console.log({
-                        chats
-                    })
                 }
             }
 
