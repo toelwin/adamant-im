@@ -9,30 +9,25 @@ export default (context) => {
 		context
 	})
 	const address = context.rootState.address
-	// const socket = io('ws://51.15.245.173:36668')
-	
-	// const domain='sockets-test.adamant.im';
-	const domain='51.15.245.173';
-	let socket;
-	if (window.location.protocol != "https:") {
-		console.log('port ws', 36668)
-		socket = io('ws://'+domain+':36668');
-		} else {
-		console.log('port wss', 36669)
-		socket = io('wss://sockets-test.adamant.im')
-	}
-	
+	// let socket;
+	// if (window.location.protocol === "https:") {
+	// socket = io('wss://sockets-test.adamant.im');
+	// } else {
+	// socket = io('ws://sockets-test.adamant.im')
+	// }
+	const socket = io.connect('wss://sockets-test.adamant.im');
+	// socket = io('http://sockets-test.adamant.im:36668')
 	socket.on('connect', () => {
 		socket.emit('msg', address + ' connected!')
 		socket.emit('address', address)
 		console.log('Connect Socket')
 	})
 	
-	socket.on('newTrans', tx => { // новая транзакция
+	socket.on('newTrans', tx => {
 		let chats = context.rootGetters.getChats
 		let targetChat
 		if (tx.recipientId === context.rootGetters.getAdmAddress) {
-			
+			console.log('TRANSACT')
 			targetChat = Object.values(chats).filter(chat => chat.partner === tx.senderId)
 			if (targetChat && targetChat[0] && targetChat[0].partner) {
 				
@@ -71,11 +66,19 @@ export default (context) => {
 						message: txup.message,
 						timestamp: txup.timestamp
 					}
+					
+					socket.emit('reportGet', data => { // отправка отчета о получении
+						console.log('reportGet',{
+							senderId:tx.senderId,
+							recipientId:tx.recipientId,
+							txid:tx.id
+						});
+					})
 				}
 			}
 			
 			} else {
-			console.log('Отчет о доставке')
+			console.log('Отчет об отправке');
 			targetChat = Object.values(chats).filter(chat => chat.partner === tx.recipientId)
 			if (targetChat.length > 0 && targetChat[0].messages[tx.id]) {
 				Vue.set(targetChat[0].messages[tx.id], 'confirm_class', 'confirmed')
@@ -89,7 +92,9 @@ export default (context) => {
 			timestamp: utils.epochTime()
 		})
 		context.commit('transactions', [tx])
+		
 	})
+	
 	
 	socket.on('reconnecting', data => { // неудачный рекконект
 		console.log(address + ' recconecting...')
