@@ -30,6 +30,7 @@
                 :balance="wallet.balance"
                 :crypto="wallet.cryptoCurrency"
                 :crypto-name="wallet.cryptoName"
+                :crypto-icon="wallet.icon"
                 @click:balance="goToTransactions"
               >
                 <icon :width="125" :height="125" fill="#BDBDBD" slot="icon">
