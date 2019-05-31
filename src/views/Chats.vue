@@ -15,7 +15,6 @@
               </v-list-tile-content>
             </v-list-tile>
 
-            <transition-group name="messages" v-if="isFulfilled">
               <chat-preview
                 v-for="message in messagesSorted"
                 :key="message.partnerId"
@@ -23,7 +22,6 @@
                 :read-only="isChatReadOnly(message.partnerId)"
                 @click="openChat(message.partnerId)"
               />
-            </transition-group>
           </v-list>
 
         </v-flex>
