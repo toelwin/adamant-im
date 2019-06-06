@@ -91,6 +91,27 @@
         animation: myload2 5s;
         animation-iteration-count: infinite;
     }
+@-moz-keyframes makeSmaller {
+    from {height:100vh;margin-top: 0px;}
+    to {height:300;margin-top: 70px;}
+}
+
+@-webkit-keyframes makeSmaller {
+     from {height:100vh;margin-top: 0px;}
+    to {height:300;margin-top: 70px;}
+}
+
+@keyframes makeSmaller {
+    from {height:100vh;margin-top: 0px;}
+    to {height:300;margin-top: 70px;}
+}
+
+preloader {
+    -webkit-animation: makeSmaller 1000ms;
+    -moz-animation: makeSmaller 1000ms;
+    animation: makeSmaller 1000ms;
+}
+	
 </style>
         <linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="203.0141" y1="92.7316" x2="222.2751" y2="126.0926" gradientTransform="matrix(-1 0 0 1 308.7937 0)">
 	<stop  offset="0" style="stop-color:#DEDEDE"/>
