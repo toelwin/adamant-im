@@ -365,7 +365,7 @@ class ApiClient {
    * @returns {boolean}
    */
   _isCompatible (version) {
-    return !!(version && semver.gte(version, this._minApiVersion))
+    return true
   }
 }
 
