@@ -1,18 +1,9 @@
 {
-  "minApiVersion": "0.5.1",
+  "minApiVersion": "0.1.0a",
   "server": {
     "adm": [
       {
-        "url": "https://clown.adamant.im"
-      },
-      {
-        "url": "https://bid.adamant.im"
-      },
-      {
-        "url": "https://lake.adamant.im"
-      },
-      {
-        "url": "https://endless.adamant.im"
+        "url": "http://163.172.132.38:36667"
       }
     ],
     "eth": [
